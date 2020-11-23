@@ -33,6 +33,9 @@ bool end         = false;
 int max_time_min = 10;
 std::string data_save_path;
 
+double gravity_sum=0.0;
+int gravity_cnt=0;
+
 void
 imu_callback( const sensor_msgs::ImuConstPtr& imu_msg )
 {
@@ -46,6 +49,9 @@ imu_callback( const sensor_msgs::ImuConstPtr& imu_msg )
     acc_x->pushMPerSec2( imu_msg->linear_acceleration.x, time );
     acc_y->pushMPerSec2( imu_msg->linear_acceleration.y, time );
     acc_z->pushMPerSec2( imu_msg->linear_acceleration.z, time );
+
+    gravity_sum += imu_msg->linear_acceleration.z;
+    gravity_cnt++;
 
     if ( start )
     {
@@ -198,13 +204,21 @@ writeYAML( const std::string data_path,
 
     fs << "}";
 
+    fs << "Gravity";
+    fs << "{";
+    fs << "unit"
+       << " m/s^2";
+
+    fs << std::string( "avg-gravity" ) << gravity_sum/gravity_cnt;
+    fs << "}";
+
     fs.release( );
 }
 
 int
 main( int argc, char** argv )
 {
-    ros::init( argc, argv, "gyro_test" );
+    ros::init( argc, argv, "imu calibration" );
     ros::NodeHandle n( "~" );
     ros::console::set_logger_level( ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug );
 
